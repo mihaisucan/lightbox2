@@ -17,11 +17,11 @@
 
   var LightboxOptions = (function() {
     function LightboxOptions() {
-      this.fadeDuration         = 500;
+      this.fadeDuration         = 200;
       this.fitImagesInViewport  = true;
-      this.resizeDuration       = 700;
+      this.resizeDuration       = 200;
       this.showImageNumberLabel = true;
-      this.wrapAround           = false;
+      this.wrapAround           = true;
     }
     
     // Change to localize to non-english language
@@ -141,12 +141,13 @@
       if (dataLightboxValue) {
         _ref = $($link.prop("tagName") + '[data-lightbox="' + dataLightboxValue + '"]');
         for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
-          a = _ref[i];
+          a = $(_ref[i]);
           this.album.push({
-            link: $(a).attr('href'),
-            title: $(a).attr('data-title') || $(a).attr('title')
+            link: a.attr('href'),
+            title: a.attr('data-title') || a.attr('title'),
+            midsize: a.attr('data-midsize'),
           });
-          if ($(a).attr('href') === $link.attr('href')) {
+          if (a.attr('href') === $link.attr('href')) {
             imageNumber = i;
           }
         }
@@ -155,18 +156,20 @@
           // If image is not part of a set
           this.album.push({
             link: $link.attr('href'),
-            title: $(a).attr('data-title') || $(a).attr('title')
+            title: $link.attr('data-title') || $link.attr('title'),
+            midsize: $link.attr('data-midsize'),
           });
         } else {
           // If image is part of a set
           _ref1 = $($link.prop("tagName") + '[rel="' + $link.attr('rel') + '"]');
           for (i = _j = 0, _len1 = _ref1.length; _j < _len1; i = ++_j) {
-            a = _ref1[i];
+            a = $(_ref1[i]);
             this.album.push({
-              link: $(a).attr('href'),
-              title: $(a).attr('data-title') || $(a).attr('title')
+              link: a.attr('href'),
+              title: a.attr('data-title') || a.attr('title'),
+              midsize: a.attr('data-midsize'),
             });
-            if ($(a).attr('href') === $link.attr('href')) {
+            if (a.attr('href') === $link.attr('href')) {
               imageNumber = i;
             }
           }
@@ -199,9 +202,10 @@
 
       // When image to show is preloaded, we send the width and height to sizeContainer()
       var preloader = new Image();
+      var src = _this.album[imageNumber].midsize || _this.album[imageNumber].link;
       preloader.onload = function() {
         var $preloader, imageHeight, imageWidth, maxImageHeight, maxImageWidth, windowHeight, windowWidth;
-        $image.attr('src', _this.album[imageNumber].link);
+        $image.attr('src', src);
 
         $preloader = $(preloader);
 
@@ -235,7 +239,7 @@
         _this.sizeContainer($image.width(), $image.height());
       };
 
-      preloader.src = this.album[imageNumber].link;
+      preloader.src = src;
       this.currentImageIndex = imageNumber;
     };
 
