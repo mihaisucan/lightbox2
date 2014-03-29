@@ -17,11 +17,13 @@
 
   var LightboxOptions = (function() {
     function LightboxOptions() {
-      this.fadeDuration         = 200;
-      this.fitImagesInViewport  = true;
-      this.resizeDuration       = 200;
+      this.fadeDuration = 200;
+      this.fitImagesInViewport = true;
+      this.resizeDuration = 200;
       this.showImageNumberLabel = true;
-      this.wrapAround           = true;
+      this.wrapAround = true;
+      this.albumMidsizeURLs = window.rd_lightbox_midsize_urls || {};
+      this.imageClassSelector = 'lightbox-image';
     }
     
     // Change to localize to non-english language
@@ -49,8 +51,9 @@
     // Loop through anchors and areamaps looking for either data-lightbox attributes or rel attributes
     // that contain 'lightbox'. When these are clicked, start lightbox.
     Lightbox.prototype.enable = function() {
+      var selector = this.options.imageClassSelector;
       var _this = this;
-      return $('body').on('click', 'a[rel^=lightbox], area[rel^=lightbox], a[data-lightbox], area[data-lightbox]', function(e) {
+      return $('body').on('click', 'a[rel^=lightbox], area[rel^=lightbox], a[data-lightbox], area[data-lightbox], a.' + selector, function(e) {
         _this.start($(e.currentTarget));
         return false;
       });
@@ -60,7 +63,7 @@
     // Attach event handlers to the new DOM elements. click click click
     Lightbox.prototype.build = function() {
       var _this = this;
-      $("<div id='lightboxOverlay' class='lightboxOverlay'></div><div id='lightbox' class='lightbox'><div class='lb-outerContainer'><div class='lb-container'><img class='lb-image' src='' /><div class='lb-nav'><a class='lb-prev' href='' ></a><a class='lb-next' href='' ></a></div><div class='lb-loader'><a class='lb-cancel'></a></div></div></div><div class='lb-dataContainer'><div class='lb-data'><div class='lb-details'><span class='lb-caption'></span><span class='lb-number'></span></div><div class='lb-closeContainer'><a class='lb-close'></a></div></div></div></div>").appendTo($('body'));
+      $("<div id='lightboxOverlay' class='lightboxOverlay'></div><div id='lightbox' class='lightbox'><div class='lb-outerContainer'><div class='lb-container'><img class='lb-image' src='' /><div class='lb-nav'><a class='lb-prev' href='' ></a><a class='lb-next' href='' ></a></div><div class='lb-loader'><a class='lb-cancel'></a></div></div></div><div class='lb-dataContainer'><div class='lb-data'><div class='lb-details'><span class='lb-caption'></span><span class='lb-number'></span></div><div class='lb-closeContainer'><a class='lb-close' href='' title='Close image preview'></a></div><div class='lb-zoomContainer'><a class='lb-zoom' href='' title='Zoom image'></a></div></div></div></div>").appendTo($('body'));
       
       // Cache jQuery objects
       this.$lightbox       = $('#lightbox');
@@ -116,11 +119,15 @@
         _this.end();
         return false;
       });
+
+      this.$lightbox.find('.lb-zoom').on('click', function() {
+        _this.onZoomClick();
+        return false;
+      });
     };
 
     // Show overlay and lightbox. If the image is part of a set, add siblings to album array.
     Lightbox.prototype.start = function($link) {
-      var a, i, _i, _j, _len, _len1, _ref, _ref1;
       var $window = $(window);
 
       $window.on("resize", this.sizeOverlay);
@@ -135,44 +142,66 @@
 
       this.album = [];
       var imageNumber = 0;
-
-      // Support both data-lightbox attribute and rel attribute implementations
-      var dataLightboxValue = $link.attr('data-lightbox');
-      if (dataLightboxValue) {
-        _ref = $($link.prop("tagName") + '[data-lightbox="' + dataLightboxValue + '"]');
-        for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
-          a = $(_ref[i]);
-          this.album.push({
-            link: a.attr('href'),
-            title: a.attr('data-title') || a.attr('title'),
-            midsize: a.attr('data-midsize'),
-          });
+      var _this = this;
+      function addImages(images, albumLabel) {
+        for (var a, i = 0; i < images.length; i++) {
+          a = $(images[i]);
+          addImage(a, albumLabel);
           if (a.attr('href') === $link.attr('href')) {
             imageNumber = i;
           }
         }
+      }
+
+      function addImage($image, albumLabel) {
+        var midsize = $image.attr('data-midsize');
+        var link = $image.attr('href');
+
+        if (!midsize && $image.hasClass('midsize')) {
+          var from = /original/g, to = 'midsize';
+          if (albumLabel && albumLabel in _this.options.albumMidsizeURLs) {
+            from = _this.options.albumMidsizeURLs[albumLabel][0];
+            to = _this.options.albumMidsizeURLs[albumLabel][1];
+          }
+          midsize = link.replace(from, to);
+        }
+
+        _this.album.push({
+          link: link,
+          title: $image.attr('data-title') || $image.attr('title'),
+          midsize: midsize,
+        });
+      }
+
+      // Support both data-lightbox attribute and rel attribute implementations
+      var dataLightboxValue = $link.attr('data-lightbox');
+      if (dataLightboxValue) {
+        var ref = $($link.prop("tagName") + '[data-lightbox="' + dataLightboxValue + '"]');
+        addImages(ref, dataLightboxValue);
       } else {
-        if ($link.attr('rel') === 'lightbox') {
-          // If image is not part of a set
-          this.album.push({
-            link: $link.attr('href'),
-            title: $link.attr('data-title') || $link.attr('title'),
-            midsize: $link.attr('data-midsize'),
-          });
-        } else {
-          // If image is part of a set
-          _ref1 = $($link.prop("tagName") + '[rel="' + $link.attr('rel') + '"]');
-          for (i = _j = 0, _len1 = _ref1.length; _j < _len1; i = ++_j) {
-            a = $(_ref1[i]);
-            this.album.push({
-              link: a.attr('href'),
-              title: a.attr('data-title') || a.attr('title'),
-              midsize: a.attr('data-midsize'),
-            });
-            if (a.attr('href') === $link.attr('href')) {
-              imageNumber = i;
+        var selector = this.options.imageClassSelector;
+        if ($link.hasClass(selector)) {
+          var albumLabel = null, classList = $link.attr('class').split(/\s+/g);
+          for (var i = 0; i < classList.length; i++) {
+            var className = classList[i];
+            if (className && className != selector && className != 'midsize') {
+              albumLabel = className;
             }
           }
+
+          if (albumLabel) {
+            var ref = $($link.prop('tagName') + '.' + selector + '.' + albumLabel);
+            addImages(ref, albumLabel);
+          } else {
+            addImage($link);
+          }
+        } else if ($link.attr('rel') === 'lightbox') {
+          // If image is not part of a set
+          addImage($link);
+        } else {
+          // If image is part of a set
+          var ref = $($link.prop("tagName") + '[rel="' + $link.attr('rel') + '"]');
+          addImages(ref);
         }
       }
       
@@ -359,6 +388,11 @@
           this.changeImage(0);
         }
       }
+    };
+
+    Lightbox.prototype.onZoomClick = function() {
+      var image = this.album[this.currentImageIndex];
+      window.location = image.link;
     };
 
     // Closing time. :-(
