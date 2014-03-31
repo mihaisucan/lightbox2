@@ -169,7 +169,7 @@
 
         if (!title) {
           var img = $image.find("img");
-          title = img.attr('title') || img.attr('alt'),
+          title = img.attr('title') || img.attr('alt');
         }
 
         _this.album.push({
