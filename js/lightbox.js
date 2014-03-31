@@ -17,9 +17,9 @@
 
   var LightboxOptions = (function() {
     function LightboxOptions() {
-      this.fadeDuration = 200;
+      this.fadeDuration = 100;
       this.fitImagesInViewport = true;
-      this.resizeDuration = 200;
+      this.resizeDuration = 100;
       this.showImageNumberLabel = true;
       this.wrapAround = true;
       this.albumMidsizeURLs = window.rd_lightbox_midsize_urls || {};
@@ -156,6 +156,7 @@
       function addImage($image, albumLabel) {
         var midsize = $image.attr('data-midsize');
         var link = $image.attr('href');
+        var title = $image.attr('data-title') || $image.attr('title');
 
         if (!midsize && $image.hasClass('midsize')) {
           var from = /original/g, to = 'midsize';
@@ -166,9 +167,14 @@
           midsize = link.replace(from, to);
         }
 
+        if (!title) {
+          var img = $image.find("img");
+          title = img.attr('title') || img.attr('alt'),
+        }
+
         _this.album.push({
           link: link,
-          title: $image.attr('data-title') || $image.attr('title'),
+          title: title,
           midsize: midsize,
         });
       }
