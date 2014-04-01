@@ -159,7 +159,7 @@
         var title = $image.attr('data-title') || $image.attr('title');
 
         if (!midsize && $image.hasClass('midsize')) {
-          var from = /original/g, to = 'midsize';
+          var from = /\/originals?\//g, to = '/midsize/';
           if (albumLabel && albumLabel in _this.options.albumMidsizeURLs) {
             from = _this.options.albumMidsizeURLs[albumLabel][0];
             to = _this.options.albumMidsizeURLs[albumLabel][1];
