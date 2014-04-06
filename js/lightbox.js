@@ -10,13 +10,14 @@
   - attribution requires leaving author name, author link, and the license info intact
 */
 
-// jshint quotmark: single, jquery: true
+// jshint quotmark: single
 
 (function(window) {
   'use strict';
   // Use local alias
   var $ = window.jQuery;
   var document = window.document;
+  var HammerImageSwipe;
 
   var LightboxOptions = (function() {
     function LightboxOptions() {
@@ -48,7 +49,8 @@
 
     Lightbox.prototype.init = function() {
       this.enable();
-      return this.build();
+      this.build();
+      this.initHammerImageSwipe();
     };
 
     // Loop through anchors and areamaps looking for either data-lightbox attributes or rel attributes
@@ -82,11 +84,17 @@
 
       // Attach event handlers to the newly minted DOM elements
       this.$overlay.hide().on('click', function() {
+        if (_this.hammerImageSwipe.dragging) {
+          return;
+        }
         _this.end();
         return false;
       });
 
       this.$lightbox.hide().on('click', function(e) {
+        if (_this.hammerImageSwipe.dragging) {
+          return;
+        }
         if ($(e.target).attr('id') === 'lightboxContainer') {
           _this.end();
           return false;
@@ -94,6 +102,9 @@
       });
 
       this.$outerContainer.on('click', function(e) {
+        if (_this.hammerImageSwipe.dragging) {
+          return;
+        }
         if ($(e.target).attr('id') === 'lightboxContainer') {
           _this.end();
           return false;
@@ -119,6 +130,9 @@
       });
 
       this.$lightbox.find('.lb-loader, .lb-close, .lb-image').on('click', function() {
+        if (_this.hammerImageSwipe.dragging) {
+          return;
+        }
         _this.end();
         return false;
       });
@@ -219,6 +233,42 @@
 
       this.$lightbox.fadeIn(this.options.fadeDuration);
       this.changeImage(imageNumber);
+    };
+
+    Lightbox.prototype.initHammerImageSwipe = function() {
+      if (this.hammerImageSwipe) {
+        this.hammerImageSwipe.destroy();
+      }
+
+      var _self = this;
+      this.hammerImageSwipe = new HammerImageSwipe({
+        element: this.$outerContainer[0],
+
+        performAction: function(direction) {
+          var index;
+
+          switch (direction) {
+            case 'left':
+              if (_self.currentImageIndex !== _self.album.length - 1) {
+                index = _self.currentImageIndex + 1;
+              } else {
+                index = 0;
+              }
+              break;
+            case 'right':
+              if (_self.currentImageIndex !== 0) {
+                index = _self.currentImageIndex - 1;
+              } else {
+                index = _self.album.length - 1;
+              }
+              break;
+            default:
+              return;
+          }
+
+          _self.changeImage(index);
+        },
+      }).enable();
     };
 
     // Hide most UI elements in preparation for the animated resizing of the lightbox.
@@ -431,6 +481,7 @@
   })();
 
   $(function() {
+    HammerImageSwipe = window.HammerImageSwipe;
     var options = new LightboxOptions();
     return new Lightbox(options);
   });
