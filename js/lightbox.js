@@ -243,6 +243,7 @@
       var _self = this;
       this.hammerImageSwipe = new HammerImageSwipe({
         element: this.$outerContainer[0],
+        overrideTouchCallout: false,
 
         performAction: function(direction) {
           var index;
