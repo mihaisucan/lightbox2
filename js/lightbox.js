@@ -21,9 +21,9 @@
 
   var LightboxOptions = (function() {
     function LightboxOptions() {
-      this.fadeDuration = 80;
+      this.fadeDuration = 100;
       this.fitImagesInViewport = true;
-      this.resizeDuration = 80;
+      this.resizeDuration = 100;
       this.showImageNumberLabel = true;
       this.wrapAround = true;
       this.albumMidsizeURLs = window.rd_lightbox_midsize_urls || {};
@@ -68,19 +68,20 @@
     // Attach event handlers to the new DOM elements. click click click
     Lightbox.prototype.build = function() {
       var _this = this;
-      $("<div id='lightboxOverlay'></div><div id='lightboxContainer'><div class='lb-outerContainer'><div class='lb-container'><img class='lb-image' src='' /><div class='lb-nav'><a class='lb-prev' href='#' ></a><a class='lb-next' href='#' ></a></div><div class='lb-loader'><a class='lb-cancel'></a></div></div></div><div class='lb-data'><div class='lb-details'><span class='lb-caption'></span><span class='lb-number'></span></div><a class='lb-close' href='#' title='Close image preview'></a> <a class='lb-zoom' href='#' title='Zoom image'></a></div></div>").appendTo($('body'));
+      $("<div id='lightboxOverlay'></div><div id='lightboxContainer'><div class='lb-container'><img class='lb-image' src='' /><div class='lb-nav'><a class='lb-prev' href='#'></a><a class='lb-next' href='#'></a></div><div class='lb-loader'><a class='lb-cancel'></a></div></div><div class='lb-data'><div class='lb-details'><span class='lb-caption'></span><span class='lb-number'></span></div><a class='lb-close' href='#' title='Close image preview'></a> <a class='lb-zoom' href='#' title='Zoom image'></a></div></div>").appendTo($('body'));
       
       // Cache jQuery objects
       this.$lightbox       = $('#lightboxContainer');
       this.$overlay        = $('#lightboxOverlay');
-      this.$outerContainer = this.$lightbox.find('.lb-outerContainer');
       this.$container      = this.$lightbox.find('.lb-container');
 
+      var $image = this.$lightbox.find('.lb-image');
+
       // Store css values for future lookup
-      this.containerTopPadding = parseInt(this.$container.css('padding-top'), 10);
-      this.containerRightPadding = parseInt(this.$container.css('padding-right'), 10);
-      this.containerBottomPadding = parseInt(this.$container.css('padding-bottom'), 10);
-      this.containerLeftPadding = parseInt(this.$container.css('padding-left'), 10);
+      this.containerTopPadding = parseInt($image.css('padding-top'), 10);
+      this.containerRightPadding = parseInt($image.css('padding-right'), 10);
+      this.containerBottomPadding = parseInt($image.css('padding-bottom'), 10);
+      this.containerLeftPadding = parseInt($image.css('padding-left'), 10);
 
       // Attach event handlers to the newly minted DOM elements
       this.$overlay.hide().on('click', function() {
@@ -101,7 +102,7 @@
         }
       });
 
-      this.$outerContainer.on('click', function(e) {
+      this.$container.on('click', function(e) {
         if (_this.hammerImageSwipe.dragging) {
           return;
         }
@@ -242,7 +243,7 @@
 
       var _self = this;
       this.hammerImageSwipe = new HammerImageSwipe({
-        element: this.$outerContainer[0],
+        element: this.$lightbox.find('.lb-image')[0],
         overrideTouchCallout: false,
 
         performAction: function(direction) {
@@ -283,8 +284,9 @@
       $('.lb-loader').fadeIn(this.options.fadeDuration);
 
       this.$lightbox.find('.lb-image, .lb-nav, .lb-prev, .lb-next, .lb-data, .lb-numbers, .lb-caption').hide();
+      $image.css({ width: 0, height: 0, opacity: 0});
 
-      this.$outerContainer.addClass('animating');
+      this.$container.addClass('animating');
 
       var imgInfo = this.album[imageNumber];
       var zoom = this.$lightbox.find('.lb-zoom');
@@ -346,22 +348,16 @@
         }
       }
 
-      var $image = this.$lightbox.find('.lb-image');
-      $image.width(imageWidth);
-      $image.height(imageHeight);
-
-      var _this = this;
-
-      var newWidth  = imageWidth + this.containerLeftPadding + this.containerRightPadding;
-      var newHeight = imageHeight + this.containerTopPadding + this.containerBottomPadding;
-
       var top = Math.round(maxImageHeight / 2 - imageHeight / 2);
+      var _this = this;
+      var $image = this.$lightbox.find('.lb-image').css('display', 'block');
 
       if (shouldAnimate === true) {
-        this.$outerContainer.animate({
-          width: newWidth + 'px',
-          height: newHeight + 'px',
+        $image.animate({
+          width: imageWidth + 'px',
+          height: imageHeight + 'px',
           top: top + 'px',
+          opacity: 1,
         }, {
           duration: this.options.resizeDuration,
           always: function() {
@@ -369,10 +365,11 @@
           },
         });
       } else {
-        this.$outerContainer.css({
-          width: newWidth + 'px',
-          height: newHeight + 'px',
+        $image.css({
+          width: imageWidth + 'px',
+          height: imageHeight + 'px',
           top: top + 'px',
+          opacity: 1,
         });
       }
     };
@@ -415,7 +412,7 @@
       } else {
         this.$lightbox.find('.lb-number').hide();
       }
-      this.$outerContainer.removeClass('animating');
+      this.$container.removeClass('animating');
       this.$lightbox.find('.lb-data').fadeIn(this.resizeDuration);
     };
 
