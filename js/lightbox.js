@@ -237,6 +237,11 @@
     };
 
     Lightbox.prototype.initHammerImageSwipe = function() {
+      if (!window.addEventListener) {
+        this.hammerImageSwipe = {};
+        return;
+      }
+
       if (this.hammerImageSwipe) {
         this.hammerImageSwipe.destroy();
       }
@@ -304,6 +309,8 @@
       prevElem.attr('href', prevImgInfo.link);
       prevElem.attr('title', prevImgInfo.title || '');
 
+      this.currentImageIndex = imageNumber;
+
       // When image to show is preloaded, we send the width and height to sizeContainer()
       var preloader = new Image();
       var src = imgInfo.midsize || imgInfo.link;
@@ -323,7 +330,6 @@
       };
 
       preloader.src = src;
-      this.currentImageIndex = imageNumber;
     };
 
     // Stretch overlay to fit the document
